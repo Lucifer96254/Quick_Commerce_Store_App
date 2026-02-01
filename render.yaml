@@ -72,10 +72,7 @@ services:
       - key: NODE_ENV
         value: production
       - key: NEXT_PUBLIC_API_URL
-        fromService:
-          name: quickmart-api
-          type: web
-          property: url
+        value: https://quickmart-api.onrender.com
       - key: NEXT_PUBLIC_WS_URL
         value: wss://quickmart-api.onrender.com/ws
     autoDeploy: true
