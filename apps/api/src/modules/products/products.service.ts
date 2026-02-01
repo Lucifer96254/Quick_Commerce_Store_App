@@ -83,6 +83,10 @@ export class ProductsService {
       resolvedCategoryId = category?.id;
     }
 
+    // Validate and convert price filters - avoid NaN
+    const validMinPrice = minPrice !== undefined && !isNaN(Number(minPrice)) ? Number(minPrice) : undefined;
+    const validMaxPrice = maxPrice !== undefined && !isNaN(Number(maxPrice)) ? Number(maxPrice) : undefined;
+
     const where: Prisma.ProductWhereInput = {
       ...(search && {
         OR: [
@@ -92,8 +96,8 @@ export class ProductsService {
         ],
       }),
       ...(resolvedCategoryId && { categoryId: resolvedCategoryId }),
-      ...(minPrice !== undefined && { price: { gte: new Prisma.Decimal(minPrice) } }),
-      ...(maxPrice !== undefined && { price: { lte: new Prisma.Decimal(maxPrice) } }),
+      ...(validMinPrice !== undefined && { price: { gte: new Prisma.Decimal(validMinPrice) } }),
+      ...(validMaxPrice !== undefined && { price: { lte: new Prisma.Decimal(validMaxPrice) } }),
       ...(isAvailable !== undefined && { isAvailable }),
       ...(isFeatured !== undefined && { isFeatured }),
       ...(inStock && { stockQuantity: { gt: 0 } }),

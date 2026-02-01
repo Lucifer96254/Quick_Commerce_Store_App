@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { Plus, Edit, Trash2, GripVertical } from 'lucide-react';
+import { Plus, Edit, Trash2, GripVertical, AlertCircle, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/lib/store';
-import { categoriesApi } from '@/lib/api';
+import { categoriesApi, ApiError } from '@/lib/api';
 
 export default function AdminCategoriesPage() {
   const { accessToken } = useAuthStore();
@@ -14,6 +14,12 @@ export default function AdminCategoriesPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingCategory, setEditingCategory] = useState<any>(null);
   const [formData, setFormData] = useState({ name: '', description: '', image: '' });
+  const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+  const showToast = (type: 'success' | 'error', message: string) => {
+    setToast({ type, message });
+    setTimeout(() => setToast(null), 5000);
+  };
 
   useEffect(() => {
     categoriesApi
@@ -31,15 +37,22 @@ export default function AdminCategoriesPage() {
         setCategories((prev) =>
           prev.map((c) => (c.id === editingCategory.id ? { ...c, ...formData } : c))
         );
+        showToast('success', 'Category updated successfully!');
       } else {
         const newCategory = await categoriesApi.create(accessToken!, formData);
         setCategories((prev) => [...prev, newCategory]);
+        showToast('success', 'Category created successfully!');
       }
       setShowForm(false);
       setEditingCategory(null);
       setFormData({ name: '', description: '', image: '' });
     } catch (error) {
       console.error('Failed to save category:', error);
+      if (error instanceof ApiError) {
+        showToast('error', error.message);
+      } else {
+        showToast('error', 'Failed to save category. Please try again.');
+      }
     }
   };
 
@@ -58,13 +71,38 @@ export default function AdminCategoriesPage() {
     try {
       await categoriesApi.delete(accessToken!, id);
       setCategories((prev) => prev.filter((c) => c.id !== id));
+      showToast('success', 'Category deleted successfully!');
     } catch (error) {
       console.error('Failed to delete category:', error);
+      if (error instanceof ApiError) {
+        showToast('error', error.message);
+      } else {
+        showToast('error', 'Failed to delete category. Please try again.');
+      }
     }
   };
 
   return (
     <div className="space-y-6">
+      {/* Toast Notification */}
+      {toast && (
+        <div
+          className={`fixed right-4 top-4 z-50 flex items-center gap-3 rounded-lg px-4 py-3 shadow-lg transition-all ${
+            toast.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
+          }`}
+        >
+          {toast.type === 'success' ? (
+            <CheckCircle className="h-5 w-5" />
+          ) : (
+            <AlertCircle className="h-5 w-5" />
+          )}
+          <span>{toast.message}</span>
+          <button onClick={() => setToast(null)} className="ml-2 hover:opacity-80">
+            ✕
+          </button>
+        </div>
+      )}
+
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Categories</h1>

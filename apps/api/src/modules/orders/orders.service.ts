@@ -263,7 +263,10 @@ export class OrdersService {
       status?: OrderStatus;
     },
   ) {
-    const { page = 1, limit = 10, status } = params;
+    // Ensure page and limit are valid numbers
+    const page = Math.max(1, Number(params.page) || 1);
+    const limit = Math.max(1, Math.min(100, Number(params.limit) || 10));
+    const { status } = params;
 
     const where: Prisma.OrderWhereInput = {
       userId,
@@ -310,9 +313,10 @@ export class OrdersService {
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
   }) {
+    // Ensure page and limit are valid numbers
+    const page = Math.max(1, Number(params.page) || 1);
+    const limit = Math.max(1, Math.min(100, Number(params.limit) || 20));
     const {
-      page = 1,
-      limit = 20,
       status,
       paymentMethod,
       search,
