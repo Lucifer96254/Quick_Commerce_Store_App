@@ -15,7 +15,7 @@ services:
     plan: free
     rootDir: apps/api
     buildCommand: |
-      cd ../.. && npm install --legacy-peer-deps --include=dev && npm run build --workspace=@quickmart/db && npm run build --workspace=@quickmart/shared-types && npm run build --workspace=@quickmart/api
+      cd ../.. && npm install --legacy-peer-deps --include=dev && npm run build --workspace=@quickmart/db && npm run build --workspace=@quickmart/shared-types && npm run build --workspace=@quickmart/api && cd packages/db && npx prisma db push --skip-generate && npx tsx prisma/seed.ts
     startCommand: npm run start:prod
     healthCheckPath: /api/v1/health/live
     envVars:
