@@ -53,9 +53,10 @@ export class UsersService {
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
   }) {
+    // Ensure page and limit are valid numbers
+    const page = Math.max(1, Number(params.page) || 1);
+    const limit = Math.max(1, Math.min(100, Number(params.limit) || 20));
     const {
-      page = 1,
-      limit = 20,
       search,
       role,
       isActive,
