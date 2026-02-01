@@ -1,5 +1,10 @@
 # QuickMart Render Blueprint
 # Deploy with: render blueprint apply
+#
+# All services use FREE tier:
+# - Web services: Spin down after 15 min inactivity
+# - PostgreSQL: 1GB storage, expires after 90 days
+# - Redis: 25MB storage, 50 connections max
 
 services:
   # Backend API Service
@@ -7,7 +12,7 @@ services:
     name: quickmart-api
     runtime: node
     region: singapore
-    plan: starter
+    plan: free
     rootDir: apps/api
     buildCommand: |
       cd ../.. && npm install && npm run build --workspace=@quickmart/db && npm run build --workspace=@quickmart/api
@@ -62,7 +67,7 @@ services:
     name: quickmart-web
     runtime: node
     region: singapore
-    plan: starter
+    plan: free
     rootDir: apps/web
     buildCommand: |
       cd ../.. && npm install && npm run build --workspace=@quickmart/shared-types && npm run build --workspace=@quickmart/web
@@ -81,7 +86,7 @@ services:
   - type: redis
     name: quickmart-redis
     region: singapore
-    plan: starter
+    plan: free
     ipAllowList: []
     maxmemoryPolicy: allkeys-lru
 
@@ -89,7 +94,7 @@ services:
 databases:
   - name: quickmart-db
     region: singapore
-    plan: starter
+    plan: free
     databaseName: quickmart
     user: quickmart
     ipAllowList: []
