@@ -434,7 +434,7 @@ export class ProductsService {
       },
     });
 
-    return products.filter(p => p.stockQuantity <= p.lowStockThreshold);
+    return products.filter((p: { stockQuantity: number; lowStockThreshold: number }) => p.stockQuantity <= p.lowStockThreshold);
   }
 
   private formatProduct(product: any) {
