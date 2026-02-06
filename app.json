@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "e3abb1aa-9b20-465b-8778-f00d16f93c7b"
+      }
+    },
+    "android": {
+      "package": "com.vivek96254.quickmart"
+    }
+  }
+}

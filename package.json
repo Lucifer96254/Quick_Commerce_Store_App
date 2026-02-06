@@ -24,8 +24,6 @@
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\""
   },
   "dependencies": {
-    "react": "18.3.1",
-    "react-dom": "18.3.1",
     "tailwindcss": "^3.4.0",
     "tailwindcss-animate": "^1.0.7",
     "autoprefixer": "^10.4.16",

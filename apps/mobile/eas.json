@@ -11,6 +11,10 @@
       },
       "android": {
         "buildType": "apk"
+      },
+      "node": "20.x.x",
+      "npm": {
+        "installArgs": ["--legacy-peer-deps"]
       }
     },
     "preview": {
@@ -23,6 +27,10 @@
       },
       "env": {
         "EXPO_PUBLIC_API_URL": "https://quickmart-api-v065.onrender.com"
+      },
+      "node": "20.x.x",
+      "npm": {
+        "installArgs": ["--legacy-peer-deps"]
       }
     },
     "production": {
@@ -35,6 +43,10 @@
       },
       "env": {
         "EXPO_PUBLIC_API_URL": "https://quickmart-api-v065.onrender.com"
+      },
+      "node": "20.x.x",
+      "npm": {
+        "installArgs": ["--legacy-peer-deps"]
       }
     }
   },
