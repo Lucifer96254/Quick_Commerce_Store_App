@@ -25,7 +25,8 @@
       "env": {
         "EXPO_PUBLIC_API_URL": "https://quickmart-api-v065.onrender.com"
       },
-      "node": "20"
+      "node": "20",
+      "buildType": "managed"
     },
     "production": {
       "distribution": "store",
@@ -38,7 +39,8 @@
       "env": {
         "EXPO_PUBLIC_API_URL": "https://quickmart-api-v065.onrender.com"
       },
-      "node": "20"
+      "node": "20",
+      "buildType": "managed"
     }
   },
   "submit": {
