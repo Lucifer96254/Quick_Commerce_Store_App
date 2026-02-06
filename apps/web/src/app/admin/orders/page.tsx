@@ -113,7 +113,7 @@ export default function AdminOrdersPage() {
                   </td>
                 </tr>
               ) : (
-                orders.map((order) => {
+                orders.map((order: any) => {
                   const status = statusConfig[order.status] || statusConfig.PENDING;
                   const StatusIcon = status.icon;
                   return (
