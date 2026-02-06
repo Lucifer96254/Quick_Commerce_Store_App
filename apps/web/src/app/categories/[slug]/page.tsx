@@ -14,7 +14,7 @@ import { categoriesApi, productsApi } from '@/lib/api';
 
 export default function CategoryPage() {
   const params = useParams<{ slug: string }>();
-  const slug = params.slug as string;
+  const slug = params?.slug as string;
 
   const { data: category, isLoading: loadingCategory } = useQuery({
     queryKey: ['category', slug],

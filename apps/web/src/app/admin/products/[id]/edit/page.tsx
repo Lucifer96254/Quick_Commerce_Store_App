@@ -11,7 +11,7 @@ import { productsApi, categoriesApi, ApiError } from '@/lib/api';
 export default function EditProductPage() {
   const router = useRouter();
   const params = useParams();
-  const productId = params.id as string;
+  const productId = params?.id as string;
   const { accessToken } = useAuthStore();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);

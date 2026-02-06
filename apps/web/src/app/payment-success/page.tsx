@@ -9,10 +9,10 @@ import { Footer } from '@/components/layout/footer';
 import { Button } from '@/components/ui/button';
 
 function PaymentSuccessContent() {
-  const searchParams = useSearchParams();
+  const searchParams = useSearchParams()!;
   const router = useRouter();
-  const orderId = searchParams.get('orderId');
-  const orderNumber = searchParams.get('orderNumber');
+  const orderId = searchParams?.get('orderId');
+  const orderNumber = searchParams?.get('orderNumber');
 
   return (
     <div className="min-h-screen bg-gray-50">

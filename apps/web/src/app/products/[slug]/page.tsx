@@ -15,7 +15,7 @@ import { productsApi, cartApi } from '@/lib/api';
 import { toast } from '@/components/ui/use-toast';
 
 export default function ProductPage() {
-  const { slug } = useParams<{ slug: string }>();
+  const { slug } = useParams<{ slug: string }>()!;
   const { accessToken, isAuthenticated } = useAuthStore();
   const { items, addItem, updateQuantity, removeItem } = useCartStore();
   const [quantity, setQuantity] = useState(1);

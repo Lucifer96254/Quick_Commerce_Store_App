@@ -9,8 +9,8 @@ import { Footer } from '@/components/layout/footer';
 import { Button } from '@/components/ui/button';
 
 function PaymentFailedContent() {
-  const searchParams = useSearchParams();
-  const orderId = searchParams.get('orderId');
+  const searchParams = useSearchParams()!;
+  const orderId = searchParams?.get('orderId');
   const reason = searchParams.get('reason') || 'Payment could not be processed';
 
   return (

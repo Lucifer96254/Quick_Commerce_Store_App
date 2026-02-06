@@ -13,8 +13,8 @@ import { productsApi, categoriesApi } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 
 function ProductsContent() {
-  const searchParams = useSearchParams();
-  const categorySlug = searchParams.get('category') || undefined;
+  const searchParams = useSearchParams()!;
+  const categorySlug = searchParams?.get('category') || undefined;
   const search = searchParams.get('search') || undefined;
   const [page, setPage] = useState(1);
   const [sortBy, setSortBy] = useState('createdAt');

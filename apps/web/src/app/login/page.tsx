@@ -11,8 +11,8 @@ import { toast } from '@/components/ui/use-toast';
 
 function LoginForm() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const redirect = searchParams.get('redirect') || '/';
+  const searchParams = useSearchParams()!;
+  const redirect = searchParams?.get('redirect') || '/';
   const { setAuth } = useAuthStore();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({ email: '', password: '' });

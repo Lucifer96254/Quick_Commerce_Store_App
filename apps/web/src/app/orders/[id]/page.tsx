@@ -81,7 +81,7 @@ const statusTimeline = [
 ];
 
 export default function OrderDetailPage() {
-  const params = useParams<{ id: string }>();
+  const params = useParams<{ id: string }>()!;
   const router = useRouter();
   const queryClient = useQueryClient();
   const { isAuthenticated, accessToken } = useAuthStore();

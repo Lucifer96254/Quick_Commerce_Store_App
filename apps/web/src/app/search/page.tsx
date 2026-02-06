@@ -21,8 +21,8 @@ const POPULAR_SEARCHES = [
 
 function SearchContent() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const initialQuery = searchParams.get('q') || '';
+  const searchParams = useSearchParams()!;
+  const initialQuery = searchParams?.get('q') || '';
   const [query, setQuery] = useState(initialQuery);
   const [debouncedQuery, setDebouncedQuery] = useState(initialQuery);
   const { recentSearches, addRecentSearch, clearRecentSearches } = useSearchStore();

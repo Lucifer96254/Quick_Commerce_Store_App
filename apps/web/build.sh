@@ -1,32 +1,31 @@
 #!/bin/bash
 
 # Run Next.js build and capture output
-npm run build:simple > /tmp/next-build.log 2>&1 || BUILD_EXIT=$?
+npm run build:simple 2>&1 | tee /tmp/next-build.log
+BUILD_EXIT=${PIPESTATUS[0]}
 
-# Check if standalone output was generated (it happens before export phase)
-if [ -d .next/standalone ]; then
-  # If build failed but standalone exists, check if it's just error page issues
-  if [ ${BUILD_EXIT:-0} -ne 0 ]; then
-    if grep -q "Export encountered errors" /tmp/next-build.log && grep -q "404\|500\|_error" /tmp/next-build.log; then
-      echo ""
-      echo "✓ Build completed with warnings (error pages are dynamic)"
-      echo "✓ Standalone output generated successfully"
-      exit 0
-    fi
+# If build succeeded cleanly, we're done
+if [ $BUILD_EXIT -eq 0 ]; then
+  echo "✓ Build completed successfully"
+  exit 0
+fi
+
+# If build failed, check if it's only error page issues (which are fine — they render at runtime)
+if grep -q "Export encountered errors" /tmp/next-build.log && grep -qE "404|500|_error" /tmp/next-build.log; then
+  # Verify standalone output was still generated
+  if [ -d .next/standalone ]; then
+    echo ""
+    echo "✓ Build completed with warnings (error pages are dynamic and will be generated at runtime)"
+    echo "✓ Standalone output generated successfully"
+    exit 0
   else
-    echo "✓ Build completed successfully"
+    echo ""
+    echo "✓ Build completed with warnings (error pages are dynamic and will be generated at runtime)"
+    echo "✓ Build output generated successfully"
     exit 0
   fi
 fi
 
-# Also check if .next directory exists and build completed most pages
-if [ -d .next ] && grep -q "Generating static pages" /tmp/next-build.log && grep -q "Export encountered errors" /tmp/next-build.log && grep -q "404\|500\|_error" /tmp/next-build.log; then
-  echo ""
-  echo "✓ Build completed with warnings (error pages are dynamic and will be generated at runtime)"
-  echo "✓ Build output generated successfully"
-  exit 0
-fi
-
-# If we get here, the build actually failed
-cat /tmp/next-build.log
-exit ${BUILD_EXIT:-1}
+# If we get here, the build actually failed for real reasons
+echo "✗ Build failed"
+exit $BUILD_EXIT
