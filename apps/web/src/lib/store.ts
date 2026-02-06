@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 
+// ─── Auth Store ───────────────────────────────────────────────
+
 interface User {
   id: string;
   email: string | null;
@@ -42,12 +44,10 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'quickmart-auth',
-      storage: createJSONStorage(() => 
-        typeof window !== 'undefined' ? localStorage : {
-          getItem: () => null,
-          setItem: () => {},
-          removeItem: () => {},
-        }
+      storage: createJSONStorage(() =>
+        typeof window !== 'undefined'
+          ? localStorage
+          : { getItem: () => null, setItem: () => {}, removeItem: () => {} },
       ),
       partialize: (state) => ({
         user: state.user,
@@ -61,6 +61,8 @@ export const useAuthStore = create<AuthState>()(
     },
   ),
 );
+
+// ─── Cart Store ───────────────────────────────────────────────
 
 interface CartItem {
   productId: string;
@@ -102,7 +104,7 @@ interface CartState {
 
 export const useCartStore = create<CartState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       items: [],
       itemCount: 0,
       subtotal: 0,
@@ -200,12 +202,131 @@ export const useCartStore = create<CartState>()(
     }),
     {
       name: 'quickmart-cart',
-      storage: createJSONStorage(() => 
-        typeof window !== 'undefined' ? localStorage : {
-          getItem: () => null,
-          setItem: () => {},
-          removeItem: () => {},
-        }
+      storage: createJSONStorage(() =>
+        typeof window !== 'undefined'
+          ? localStorage
+          : { getItem: () => null, setItem: () => {}, removeItem: () => {} },
+      ),
+    },
+  ),
+);
+
+// ─── Address Store ────────────────────────────────────────────
+
+interface Address {
+  id: string;
+  label?: string;
+  type: string;
+  addressLine1: string;
+  addressLine2?: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  landmark?: string;
+  isDefault: boolean;
+  phone?: string;
+  fullName?: string;
+}
+
+interface AddressState {
+  addresses: Address[];
+  isLoading: boolean;
+  setAddresses: (addresses: Address[]) => void;
+  addAddress: (address: Address) => void;
+  updateAddress: (id: string, data: Partial<Address>) => void;
+  removeAddress: (id: string) => void;
+  setDefault: (id: string) => void;
+  setLoading: (loading: boolean) => void;
+}
+
+export const useAddressStore = create<AddressState>()((set) => ({
+  addresses: [],
+  isLoading: false,
+  setAddresses: (addresses) => set({ addresses }),
+  addAddress: (address) =>
+    set((state) => {
+      const newAddresses = address.isDefault
+        ? state.addresses.map((a) => ({ ...a, isDefault: false }))
+        : [...state.addresses];
+      return { addresses: [...newAddresses, address] };
+    }),
+  updateAddress: (id, data) =>
+    set((state) => ({
+      addresses: state.addresses.map((a) =>
+        a.id === id ? { ...a, ...data } : a,
+      ),
+    })),
+  removeAddress: (id) =>
+    set((state) => ({
+      addresses: state.addresses.filter((a) => a.id !== id),
+    })),
+  setDefault: (id) =>
+    set((state) => ({
+      addresses: state.addresses.map((a) => ({
+        ...a,
+        isDefault: a.id === id,
+      })),
+    })),
+  setLoading: (loading) => set({ isLoading: loading }),
+}));
+
+// ─── UI Store ─────────────────────────────────────────────────
+
+interface UIState {
+  isOnline: boolean;
+  cartDrawerOpen: boolean;
+  addressModalOpen: boolean;
+  editingAddressId: string | null;
+  searchOpen: boolean;
+  setOnline: (online: boolean) => void;
+  setCartDrawerOpen: (open: boolean) => void;
+  openAddressModal: (addressId?: string) => void;
+  closeAddressModal: () => void;
+  setSearchOpen: (open: boolean) => void;
+}
+
+export const useUIStore = create<UIState>()((set) => ({
+  isOnline: true,
+  cartDrawerOpen: false,
+  addressModalOpen: false,
+  editingAddressId: null,
+  searchOpen: false,
+  setOnline: (online) => set({ isOnline: online }),
+  setCartDrawerOpen: (open) => set({ cartDrawerOpen: open }),
+  openAddressModal: (addressId) =>
+    set({ addressModalOpen: true, editingAddressId: addressId || null }),
+  closeAddressModal: () =>
+    set({ addressModalOpen: false, editingAddressId: null }),
+  setSearchOpen: (open) => set({ searchOpen: open }),
+}));
+
+// ─── Search Store ─────────────────────────────────────────────
+
+interface SearchState {
+  recentSearches: string[];
+  addRecentSearch: (term: string) => void;
+  clearRecentSearches: () => void;
+}
+
+export const useSearchStore = create<SearchState>()(
+  persist(
+    (set) => ({
+      recentSearches: [],
+      addRecentSearch: (term) =>
+        set((state) => {
+          const filtered = state.recentSearches.filter(
+            (s) => s.toLowerCase() !== term.toLowerCase(),
+          );
+          return { recentSearches: [term, ...filtered].slice(0, 10) };
+        }),
+      clearRecentSearches: () => set({ recentSearches: [] }),
+    }),
+    {
+      name: 'quickmart-search',
+      storage: createJSONStorage(() =>
+        typeof window !== 'undefined'
+          ? localStorage
+          : { getItem: () => null, setItem: () => {}, removeItem: () => {} },
       ),
     },
   ),

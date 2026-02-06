@@ -22,23 +22,35 @@ export default function RootLayout() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <StatusBar style="auto" />
+      <StatusBar style="dark" />
       <Stack
         screenOptions={{
           headerStyle: {
-            backgroundColor: '#16a34a',
+            backgroundColor: '#fff',
           },
-          headerTintColor: '#fff',
+          headerTintColor: '#1f2937',
           headerTitleStyle: {
             fontWeight: 'bold',
+          },
+          headerShadowVisible: false,
+          contentStyle: {
+            backgroundColor: '#f9fafb',
           },
         }}
       >
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="product/[slug]" options={{ title: 'Product' }} />
-        <Stack.Screen name="cart" options={{ title: 'Cart' }} />
+        <Stack.Screen name="product/[slug]" options={{ title: 'Product Details' }} />
+        <Stack.Screen name="cart" options={{ title: 'My Cart' }} />
         <Stack.Screen name="checkout" options={{ title: 'Checkout' }} />
         <Stack.Screen name="order/[id]" options={{ title: 'Order Details' }} />
+        <Stack.Screen name="products" options={{ title: 'Products' }} />
+        <Stack.Screen name="addresses" options={{ title: 'My Addresses' }} />
+        <Stack.Screen name="payment-methods" options={{ title: 'Payment Methods' }} />
+        <Stack.Screen name="notifications" options={{ title: 'Notifications' }} />
+        <Stack.Screen name="help" options={{ title: 'Help & Support' }} />
+        <Stack.Screen name="terms" options={{ title: 'Terms & Conditions' }} />
+        <Stack.Screen name="privacy" options={{ title: 'Privacy Policy' }} />
+        <Stack.Screen name="edit-profile" options={{ title: 'Edit Profile' }} />
         <Stack.Screen name="login" options={{ headerShown: false }} />
         <Stack.Screen name="register" options={{ headerShown: false }} />
       </Stack>

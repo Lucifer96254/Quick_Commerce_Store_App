@@ -1,16 +1,17 @@
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native';
 import { useState } from 'react';
 import { router } from 'expo-router';
+import { Feather } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { ordersApi } from '@/lib/api';
 
-const statusColors: Record<string, { bg: string; text: string }> = {
-  PENDING: { bg: '#fef3c7', text: '#92400e' },
-  CONFIRMED: { bg: '#dbeafe', text: '#1e40af' },
-  PACKED: { bg: '#e9d5ff', text: '#7e22ce' },
-  OUT_FOR_DELIVERY: { bg: '#c7d2fe', text: '#3730a3' },
-  DELIVERED: { bg: '#bbf7d0', text: '#166534' },
-  CANCELLED: { bg: '#fee2e2', text: '#991b1b' },
+const statusConfig: Record<string, { bg: string; text: string; icon: string }> = {
+  PENDING: { bg: '#FFF7ED', text: '#C2410C', icon: 'clock' },
+  CONFIRMED: { bg: '#EFF6FF', text: '#1D4ED8', icon: 'check-circle' },
+  PACKED: { bg: '#F5F3FF', text: '#7C3AED', icon: 'package' },
+  OUT_FOR_DELIVERY: { bg: '#ECFDF5', text: '#059669', icon: 'truck' },
+  DELIVERED: { bg: '#F0FDF4', text: '#16A34A', icon: 'check' },
+  CANCELLED: { bg: '#FEF2F2', text: '#DC2626', icon: 'x-circle' },
 };
 
 export default function OrdersScreen() {
@@ -28,36 +29,51 @@ export default function OrdersScreen() {
   };
 
   const renderOrder = ({ item }: { item: any }) => {
-    const colors = statusColors[item.status] || { bg: '#f3f4f6', text: '#374151' };
-    
+    const config = statusConfig[item.status] || { bg: '#f3f4f6', text: '#374151', icon: 'help-circle' };
+
     return (
       <TouchableOpacity
         style={styles.orderCard}
+        activeOpacity={0.7}
         onPress={() => router.push(`/order/${item.id}`)}
       >
         <View style={styles.orderHeader}>
-          <Text style={styles.orderNumber}>{item.orderNumber}</Text>
-          <View style={[styles.statusBadge, { backgroundColor: colors.bg }]}>
-            <Text style={[styles.statusText, { color: colors.text }]}>
+          <View style={styles.orderNumberRow}>
+            <View style={styles.orderIcon}>
+              <Feather name="shopping-bag" size={16} color="#FC8019" />
+            </View>
+            <View>
+              <Text style={styles.orderNumber}>{item.orderNumber}</Text>
+              <Text style={styles.orderDate}>
+                {new Date(item.createdAt).toLocaleDateString('en-IN', {
+                  day: 'numeric',
+                  month: 'short',
+                  year: 'numeric',
+                })}
+              </Text>
+            </View>
+          </View>
+          <View style={[styles.statusBadge, { backgroundColor: config.bg }]}>
+            <Feather name={config.icon as any} size={12} color={config.text} />
+            <Text style={[styles.statusText, { color: config.text }]}>
               {item.status.replace(/_/g, ' ')}
             </Text>
           </View>
         </View>
-        
-        <View style={styles.orderDetails}>
+
+        <View style={styles.orderDivider} />
+
+        <View style={styles.orderFooter}>
           <Text style={styles.itemCount}>{item.itemCount} items</Text>
           <Text style={styles.orderTotal}>₹{item.total}</Text>
         </View>
-        
-        <Text style={styles.orderDate}>
-          {new Date(item.createdAt).toLocaleDateString('en-IN', {
-            day: 'numeric',
-            month: 'short',
-            year: 'numeric',
-            hour: 'numeric',
-            minute: '2-digit',
-          })}
-        </Text>
+
+        <View style={styles.reorderRow}>
+          <TouchableOpacity style={styles.detailsButton}>
+            <Text style={styles.detailsButtonText}>View Details</Text>
+            <Feather name="chevron-right" size={14} color="#FC8019" />
+          </TouchableOpacity>
+        </View>
       </TouchableOpacity>
     );
   };
@@ -65,7 +81,10 @@ export default function OrdersScreen() {
   if (isLoading && !data) {
     return (
       <View style={styles.loading}>
-        <Text>Loading orders...</Text>
+        <View style={styles.loadingIcon}>
+          <Feather name="package" size={32} color="#d1d5db" />
+        </View>
+        <Text style={styles.loadingText}>Loading orders...</Text>
       </View>
     );
   }
@@ -75,6 +94,9 @@ export default function OrdersScreen() {
   if (orders.length === 0) {
     return (
       <View style={styles.empty}>
+        <View style={styles.emptyIcon}>
+          <Feather name="package" size={48} color="#d1d5db" />
+        </View>
         <Text style={styles.emptyTitle}>No orders yet</Text>
         <Text style={styles.emptySubtitle}>Your order history will appear here</Text>
         <TouchableOpacity
@@ -94,8 +116,9 @@ export default function OrdersScreen() {
         renderItem={renderOrder}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
+        showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FC8019" />
         }
       />
     </View>
@@ -112,16 +135,38 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  loadingIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#f3f4f6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  loadingText: {
+    fontSize: 14,
+    color: '#6b7280',
+  },
   empty: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 32,
   },
+  emptyIcon: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: '#f3f4f6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
   emptyTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: '#111827',
+    fontWeight: '700',
+    color: '#1f2937',
     marginBottom: 8,
   },
   emptySubtitle: {
@@ -130,66 +175,102 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   shopButton: {
-    backgroundColor: '#16a34a',
-    paddingHorizontal: 24,
+    backgroundColor: '#FC8019',
+    paddingHorizontal: 28,
     paddingVertical: 12,
-    borderRadius: 8,
+    borderRadius: 10,
   },
   shopButtonText: {
     color: '#fff',
-    fontWeight: '600',
+    fontWeight: '700',
+    fontSize: 15,
   },
   list: {
     padding: 16,
   },
   orderCard: {
     backgroundColor: '#fff',
-    padding: 16,
-    borderRadius: 12,
+    borderRadius: 14,
     marginBottom: 12,
+    padding: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
+    shadowOpacity: 0.04,
+    shadowRadius: 3,
     elevation: 1,
   },
   orderHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  orderNumberRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    gap: 10,
+  },
+  orderIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: '#FFF7ED',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   orderNumber: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#111827',
-  },
-  statusBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  statusText: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  orderDetails: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  itemCount: {
     fontSize: 14,
-    color: '#6b7280',
-  },
-  orderTotal: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#111827',
+    fontWeight: '700',
+    color: '#1f2937',
   },
   orderDate: {
     fontSize: 12,
     color: '#9ca3af',
+    marginTop: 2,
+  },
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 20,
+    gap: 4,
+  },
+  statusText: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  orderDivider: {
+    height: 1,
+    backgroundColor: '#f3f4f6',
+    marginVertical: 12,
+  },
+  orderFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  itemCount: {
+    fontSize: 13,
+    color: '#6b7280',
+  },
+  orderTotal: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#1f2937',
+  },
+  reorderRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: 10,
+  },
+  detailsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  detailsButtonText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#FC8019',
   },
 });

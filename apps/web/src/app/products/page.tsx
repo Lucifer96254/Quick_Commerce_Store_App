@@ -1,106 +1,118 @@
+'use client';
+
+import { useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
-import { Filter, SlidersHorizontal } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { useQuery } from '@tanstack/react-query';
+import { SlidersHorizontal, ChevronDown } from 'lucide-react';
 import { Navbar } from '@/components/layout/navbar';
 import { Footer } from '@/components/layout/footer';
+import { ProductCard } from '@/components/ui/product-card';
+import { ProductRowSkeleton } from '@/components/ui/skeleton-loader';
+import { productsApi, categoriesApi } from '@/lib/api';
+import { Button } from '@/components/ui/button';
 
-async function getProducts(searchParams: Record<string, string | undefined>) {
-  try {
-    const params = new URLSearchParams();
-    if (searchParams.category) params.set('categorySlug', searchParams.category);
-    if (searchParams.search) params.set('search', searchParams.search);
-    if (searchParams.page) params.set('page', searchParams.page);
-    params.set('limit', '20');
-    
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/v1/products?${params}`,
-      { next: { revalidate: 60 } }
-    );
-    if (!res.ok) return { items: [], pagination: { total: 0, totalPages: 0 } };
-    const data = await res.json();
-    return data.data || { items: [], pagination: { total: 0, totalPages: 0 } };
-  } catch {
-    return { items: [], pagination: { total: 0, totalPages: 0 } };
-  }
-}
+export default function ProductsPage() {
+  const searchParams = useSearchParams();
+  const categorySlug = searchParams.get('category') || undefined;
+  const search = searchParams.get('search') || undefined;
+  const [page, setPage] = useState(1);
+  const [sortBy, setSortBy] = useState('createdAt');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
-async function getCategories() {
-  try {
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/v1/categories`,
-      { next: { revalidate: 300 } }
-    );
-    if (!res.ok) return [];
-    const data = await res.json();
-    return data.data || [];
-  } catch {
-    return [];
-  }
-}
+  const { data: categories } = useQuery({
+    queryKey: ['categories'],
+    queryFn: () => categoriesApi.list(),
+  });
 
-export default async function ProductsPage({
-  searchParams,
-}: {
-  searchParams: Record<string, string | undefined>;
-}) {
-  const [productsData, categories] = await Promise.all([
-    getProducts(searchParams),
-    getCategories(),
-  ]);
+  const { data: productsData, isLoading } = useQuery({
+    queryKey: ['products', categorySlug, search, page, sortBy, sortOrder],
+    queryFn: () =>
+      productsApi.list({
+        categorySlug,
+        search,
+        page,
+        limit: 24,
+        sortBy,
+        sortOrder,
+      }),
+  });
 
-  const { items: products, pagination } = productsData;
+  const catList = (categories as any[]) || [];
+  const products = (productsData as any)?.items || [];
+  const pagination = (productsData as any)?.pagination || { total: 0, totalPages: 0 };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white">
       <Navbar />
-      
-      <main className="container mx-auto px-4 py-8">
-        <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+
+      <main className="container mx-auto px-4 py-4">
+        {/* Header */}
+        <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Products</h1>
-            <p className="text-gray-600">{pagination.total} products available</p>
+            <h1 className="text-xl font-extrabold text-swiggy-gray-800 md:text-2xl">
+              {categorySlug
+                ? catList.find((c: any) => c.slug === categorySlug)?.name || 'Products'
+                : search
+                  ? `Results for "${search}"`
+                  : 'All Products'}
+            </h1>
+            <p className="text-xs text-swiggy-gray-400 md:text-sm">
+              {pagination.total} product{pagination.total !== 1 ? 's' : ''} found
+            </p>
           </div>
-          
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" className="gap-2">
-              <Filter className="h-4 w-4" /> Filter
-            </Button>
-            <Button variant="outline" size="sm" className="gap-2">
-              <SlidersHorizontal className="h-4 w-4" /> Sort
-            </Button>
+
+          {/* Sort */}
+          <div className="flex items-center gap-2">
+            <select
+              value={`${sortBy}-${sortOrder}`}
+              onChange={(e) => {
+                const [sb, so] = e.target.value.split('-');
+                setSortBy(sb);
+                setSortOrder(so as 'asc' | 'desc');
+                setPage(1);
+              }}
+              className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-swiggy-gray-700 focus:border-swiggy-orange focus:outline-none focus:ring-1 focus:ring-swiggy-orange/30"
+            >
+              <option value="createdAt-desc">Newest First</option>
+              <option value="price-asc">Price: Low to High</option>
+              <option value="price-desc">Price: High to Low</option>
+              <option value="name-asc">Name A–Z</option>
+            </select>
           </div>
         </div>
 
-        <div className="grid gap-8 lg:grid-cols-4">
-          {/* Sidebar - Categories */}
+        <div className="grid gap-6 lg:grid-cols-[180px_1fr]">
+          {/* Sidebar - Categories (desktop) */}
           <aside className="hidden lg:block">
-            <div className="rounded-2xl bg-white p-6 shadow-sm">
-              <h3 className="mb-4 font-semibold text-gray-900">Categories</h3>
-              <ul className="space-y-2">
+            <div className="sticky top-[80px] rounded-xl border border-gray-100 bg-swiggy-gray-50 p-3">
+              <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-swiggy-gray-500">
+                Categories
+              </h3>
+              <ul className="space-y-0.5">
                 <li>
                   <Link
                     href="/products"
                     className={`block rounded-lg px-3 py-2 text-sm transition-colors ${
-                      !searchParams.category
-                        ? 'bg-primary text-white'
-                        : 'text-gray-600 hover:bg-gray-100'
+                      !categorySlug
+                        ? 'bg-swiggy-orange font-bold text-white'
+                        : 'font-medium text-swiggy-gray-600 hover:bg-white'
                     }`}
                   >
                     All Products
                   </Link>
                 </li>
-                {categories.map((category: any) => (
-                  <li key={category.id}>
+                {catList.map((cat: any) => (
+                  <li key={cat.id}>
                     <Link
-                      href={`/products?category=${category.slug}`}
+                      href={`/products?category=${cat.slug}`}
                       className={`block rounded-lg px-3 py-2 text-sm transition-colors ${
-                        searchParams.category === category.slug
-                          ? 'bg-primary text-white'
-                          : 'text-gray-600 hover:bg-gray-100'
+                        categorySlug === cat.slug
+                          ? 'bg-swiggy-orange font-bold text-white'
+                          : 'font-medium text-swiggy-gray-600 hover:bg-white'
                       }`}
                     >
-                      {category.name}
+                      {cat.name}
                     </Link>
                   </li>
                 ))}
@@ -109,92 +121,79 @@ export default async function ProductsPage({
           </aside>
 
           {/* Products Grid */}
-          <div className="lg:col-span-3">
-            {products.length === 0 ? (
-              <div className="flex flex-col items-center justify-center rounded-2xl bg-white py-16">
-                <div className="text-6xl mb-4">📦</div>
-                <h3 className="text-xl font-semibold text-gray-900">No products found</h3>
-                <p className="text-gray-600">Try adjusting your filters or search terms</p>
+          <div>
+            {/* Category pills - mobile */}
+            <div className="mb-4 flex gap-2 overflow-x-auto no-scrollbar lg:hidden">
+              <Link
+                href="/products"
+                className={`flex-shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                  !categorySlug
+                    ? 'border-swiggy-orange bg-swiggy-orange text-white'
+                    : 'border-gray-200 bg-white text-swiggy-gray-600'
+                }`}
+              >
+                All
+              </Link>
+              {catList.map((cat: any) => (
+                <Link
+                  key={cat.id}
+                  href={`/products?category=${cat.slug}`}
+                  className={`flex-shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                    categorySlug === cat.slug
+                      ? 'border-swiggy-orange bg-swiggy-orange text-white'
+                      : 'border-gray-200 bg-white text-swiggy-gray-600'
+                  }`}
+                >
+                  {cat.name}
+                </Link>
+              ))}
+            </div>
+
+            {isLoading ? (
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+                {Array.from({ length: 12 }).map((_, i) => (
+                  <div key={i} className="flex flex-col rounded-xl bg-white border border-gray-100">
+                    <div className="skeleton aspect-square rounded-t-xl" />
+                    <div className="space-y-2 p-3">
+                      <div className="skeleton h-3 w-full rounded" />
+                      <div className="skeleton h-3 w-2/3 rounded" />
+                      <div className="skeleton mt-2 h-7 w-full rounded-lg" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : products.length === 0 ? (
+              <div className="flex flex-col items-center justify-center rounded-xl bg-swiggy-gray-50 py-16">
+                <div className="mb-3 text-5xl">📦</div>
+                <h3 className="text-lg font-bold text-swiggy-gray-700">No products found</h3>
+                <p className="text-sm text-swiggy-gray-400">Try adjusting your filters</p>
               </div>
             ) : (
-              <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
                 {products.map((product: any) => (
-                  <Link
-                    key={product.id}
-                    href={`/products/${product.slug}`}
-                    className="group rounded-2xl bg-white p-4 shadow-sm transition-all hover:shadow-md"
-                  >
-                    <div className="relative mb-3 aspect-square overflow-hidden rounded-xl bg-gray-100">
-                      {product.images?.[0]?.url ? (
-                        <Image
-                          src={product.images[0].url}
-                          alt={product.name}
-                          fill
-                          className="object-cover transition-transform group-hover:scale-105"
-                        />
-                      ) : (
-                        <div className="flex h-full items-center justify-center text-4xl">
-                          📦
-                        </div>
-                      )}
-                      {product.discountedPrice && (
-                        <div className="absolute left-2 top-2 rounded-full bg-red-500 px-2 py-1 text-xs font-medium text-white">
-                          {Math.round((1 - product.discountedPrice / product.price) * 100)}% OFF
-                        </div>
-                      )}
-                      {product.stockQuantity === 0 && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-                          <span className="rounded-full bg-white px-3 py-1 text-sm font-medium text-gray-900">
-                            Out of Stock
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                    <h3 className="mb-1 line-clamp-2 text-sm font-medium text-gray-900 group-hover:text-primary">
-                      {product.name}
-                    </h3>
-                    <p className="text-xs text-gray-500">{product.unit}</p>
-                    <div className="mt-2 flex items-center gap-2">
-                      <span className="text-lg font-bold text-gray-900">
-                        ₹{product.discountedPrice || product.price}
-                      </span>
-                      {product.discountedPrice && (
-                        <span className="text-sm text-gray-400 line-through">
-                          ₹{product.price}
-                        </span>
-                      )}
-                    </div>
-                    <Button 
-                      size="sm" 
-                      className="mt-3 w-full"
-                      disabled={product.stockQuantity === 0}
-                    >
-                      {product.stockQuantity === 0 ? 'Out of Stock' : 'Add to Cart'}
-                    </Button>
-                  </Link>
+                  <ProductCard key={product.id} product={product} />
                 ))}
               </div>
             )}
 
             {/* Pagination */}
             {pagination.totalPages > 1 && (
-              <div className="mt-8 flex justify-center gap-2">
-                {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((page) => (
-                  <Link
-                    key={page}
-                    href={`/products?${new URLSearchParams({
-                      ...searchParams,
-                      page: String(page),
-                    })}`}
-                  >
-                    <Button
-                      variant={searchParams.page === String(page) || (!searchParams.page && page === 1) ? 'default' : 'outline'}
-                      size="sm"
+              <div className="mt-6 flex items-center justify-center gap-1">
+                {Array.from({ length: Math.min(pagination.totalPages, 8) }, (_, i) => i + 1).map(
+                  (p) => (
+                    <button
+                      key={p}
+                      onClick={() => setPage(p)}
+                      className={`h-8 min-w-[32px] rounded-lg text-sm font-semibold transition-colors ${
+                        page === p
+                          ? 'bg-swiggy-orange text-white'
+                          : 'text-swiggy-gray-600 hover:bg-swiggy-gray-50'
+                      }`}
                     >
-                      {page}
-                    </Button>
-                  </Link>
-                ))}
+                      {p}
+                    </button>
+                  ),
+                )}
               </div>
             )}
           </div>

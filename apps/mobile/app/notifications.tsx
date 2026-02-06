@@ -1,0 +1,32 @@
+import { View, Text, StyleSheet } from 'react-native';
+
+export default function NotificationsScreen() {
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>Notifications</Text>
+      <Text style={styles.subtitle}>
+        Notifications for orders and offers will appear here in a future
+        update.
+      </Text>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 24,
+    backgroundColor: '#f9fafb',
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#111827',
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 14,
+    color: '#6b7280',
+  },
+});
+

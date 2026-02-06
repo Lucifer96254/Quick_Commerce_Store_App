@@ -1,295 +1,211 @@
+'use client';
+
+import { useQuery } from '@tanstack/react-query';
+import { Clock, Zap, Shield, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
-import Image from 'next/image';
-import { ArrowRight, Clock, MapPin, ShoppingBag, Truck } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Navbar } from '@/components/layout/navbar';
+import { Footer } from '@/components/layout/footer';
+import { ProductCard } from '@/components/ui/product-card';
+import { CategoryPill } from '@/components/ui/category-pill';
+import { SectionHeader } from '@/components/ui/section-header';
+import { HorizontalScroller } from '@/components/ui/horizontal-scroller';
+import { ProductRowSkeleton, CategoryPillSkeleton, BannerSkeleton } from '@/components/ui/skeleton-loader';
+import { productsApi, categoriesApi } from '@/lib/api';
 
-async function getCategories() {
-  try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/v1/categories`, {
-      next: { revalidate: 60 },
-    });
-    if (!res.ok) return [];
-    const data = await res.json();
-    return data.data || [];
-  } catch {
-    return [];
-  }
-}
+const PROMO_BANNERS = [
+  { id: 1, title: 'Fresh Fruits & Veggies', subtitle: 'Up to 30% off', bg: 'from-green-400 to-emerald-500', emoji: '🥬' },
+  { id: 2, title: 'Dairy & Bread', subtitle: 'Starting ₹19', bg: 'from-yellow-400 to-orange-400', emoji: '🥛' },
+  { id: 3, title: 'Munchies & Snacks', subtitle: 'Buy 2 Get 1 Free', bg: 'from-red-400 to-pink-500', emoji: '🍿' },
+  { id: 4, title: 'Cold Drinks & Juices', subtitle: 'Chilled & Fresh', bg: 'from-blue-400 to-cyan-500', emoji: '🧃' },
+  { id: 5, title: 'Household Essentials', subtitle: 'Weekly Deals', bg: 'from-purple-400 to-violet-500', emoji: '🧹' },
+];
 
-async function getFeaturedProducts() {
-  try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/v1/products/featured`, {
-      next: { revalidate: 60 },
-    });
-    if (!res.ok) return [];
-    const data = await res.json();
-    return data.data || [];
-  } catch {
-    return [];
-  }
-}
+export default function HomePage() {
+  const { data: categories, isLoading: loadingCategories } = useQuery({
+    queryKey: ['categories'],
+    queryFn: () => categoriesApi.list(),
+  });
 
-export default async function HomePage() {
-  const [categories, featuredProducts] = await Promise.all([
-    getCategories(),
-    getFeaturedProducts(),
-  ]);
+  const { data: featuredProducts, isLoading: loadingFeatured } = useQuery({
+    queryKey: ['products-featured'],
+    queryFn: () => productsApi.getFeatured(),
+  });
+
+  const { data: allProducts, isLoading: loadingAll } = useQuery({
+    queryKey: ['products-all'],
+    queryFn: () => productsApi.list({ limit: 30 }),
+  });
+
+  const catList = (categories as any[]) || [];
+  const featured = (featuredProducts as any[]) || [];
+  const allItems = (allProducts as any)?.items || [];
+
+  // Simulate sections from all products
+  const bestSellers = allItems.slice(0, 10);
+  const recentProducts = allItems.slice(5, 15);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-green-50 to-white">
-      {/* Navigation */}
-      <nav className="sticky top-0 z-50 border-b bg-white/80 backdrop-blur-md">
-        <div className="container mx-auto flex h-16 items-center justify-between px-4">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary">
-              <ShoppingBag className="h-6 w-6 text-white" />
-            </div>
-            <span className="text-xl font-bold text-gray-900">QuickMart</span>
-          </Link>
+    <div className="min-h-screen bg-white">
+      <Navbar />
 
-          <div className="flex items-center gap-4">
-            <Link href="/products">
-              <Button variant="ghost">Products</Button>
-            </Link>
-            <Link href="/cart">
-              <Button variant="ghost">Cart</Button>
-            </Link>
-            <Link href="/login">
-              <Button variant="outline">Login</Button>
-            </Link>
-            <Link href="/register">
-              <Button>Sign Up</Button>
-            </Link>
+      {/* ETA Strip */}
+      <div className="border-b border-gray-50 bg-white">
+        <div className="container mx-auto flex items-center gap-6 px-4 py-2">
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-swiggy-gray-700">
+            <div className="flex h-5 w-5 items-center justify-center rounded-full bg-swiggy-green">
+              <Zap className="h-3 w-3 text-white" />
+            </div>
+            Delivery in <span className="text-swiggy-green">10–15 min</span>
+          </div>
+          <div className="hidden items-center gap-1.5 text-xs text-swiggy-gray-400 md:flex">
+            <Shield className="h-3.5 w-3.5" />
+            Safe & hygienic packaging
+          </div>
+          <div className="hidden items-center gap-1.5 text-xs text-swiggy-gray-400 md:flex">
+            <Clock className="h-3.5 w-3.5" />
+            Best prices guaranteed
           </div>
         </div>
-      </nav>
+      </div>
 
-      {/* Hero Section */}
-      <section className="container mx-auto px-4 py-16">
-        <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
-          <div className="space-y-6">
-            <div className="inline-flex items-center gap-2 rounded-full bg-green-100 px-4 py-2 text-sm font-medium text-green-700">
-              <Clock className="h-4 w-4" />
-              Delivery in 10-15 minutes
-            </div>
-            <h1 className="text-5xl font-bold leading-tight text-gray-900 lg:text-6xl">
-              Fresh Groceries
-              <br />
-              <span className="text-primary">Delivered Fast</span>
-            </h1>
-            <p className="text-lg text-gray-600">
-              Get your daily essentials delivered to your doorstep in minutes.
-              Fresh produce, dairy, snacks, and more!
-            </p>
-            <div className="flex gap-4">
-              <Link href="/products">
-                <Button size="lg" className="gap-2">
-                  Shop Now <ArrowRight className="h-5 w-5" />
-                </Button>
-              </Link>
-              <Button size="lg" variant="outline" className="gap-2">
-                <MapPin className="h-5 w-5" /> Set Location
-              </Button>
-            </div>
-          </div>
-
-          <div className="relative">
-            <div className="aspect-square overflow-hidden rounded-3xl bg-gradient-to-br from-green-100 to-green-200">
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="grid grid-cols-3 gap-4 p-8">
-                  {['🍎', '🥛', '🍞', '🥬', '🧀', '🥚', '🍊', '🥕', '🍇'].map((emoji, i) => (
-                    <div
-                      key={i}
-                      className="flex h-20 w-20 items-center justify-center rounded-2xl bg-white text-4xl shadow-lg"
-                    >
-                      {emoji}
+      <main className="pb-20 md:pb-8">
+        {/* Promo Banners */}
+        <section className="py-4">
+          <div className="container mx-auto px-4">
+            <HorizontalScroller>
+              {PROMO_BANNERS.map((banner) => (
+                <Link
+                  key={banner.id}
+                  href="/products"
+                  className={`flex h-28 w-[260px] flex-shrink-0 items-center justify-between rounded-2xl bg-gradient-to-r ${banner.bg} p-5 text-white transition-transform hover:scale-[1.02] md:h-36 md:w-[320px]`}
+                >
+                  <div>
+                    <p className="text-sm font-bold md:text-base">{banner.title}</p>
+                    <p className="mt-0.5 text-xs opacity-90 md:text-sm">{banner.subtitle}</p>
+                    <div className="mt-2 flex items-center gap-1 text-[11px] font-semibold opacity-90">
+                      Order Now <ChevronRight className="h-3 w-3" />
                     </div>
+                  </div>
+                  <span className="text-4xl md:text-5xl">{banner.emoji}</span>
+                </Link>
+              ))}
+            </HorizontalScroller>
+          </div>
+        </section>
+
+        {/* Shop by Category */}
+        <section className="py-4">
+          <div className="container mx-auto px-4">
+            <SectionHeader title="Shop by Category" href="/categories" />
+            {loadingCategories ? (
+              <div className="flex gap-3 overflow-hidden">
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <CategoryPillSkeleton key={i} />
+                ))}
+              </div>
+            ) : (
+              <HorizontalScroller>
+                {catList.slice(0, 12).map((cat: any) => (
+                  <CategoryPill key={cat.id} category={cat} />
+                ))}
+              </HorizontalScroller>
+            )}
+          </div>
+        </section>
+
+        <div className="container mx-auto px-4">
+          <hr className="border-gray-100" />
+        </div>
+
+        {/* Featured Products */}
+        <section className="py-4">
+          <div className="container mx-auto px-4">
+            <SectionHeader
+              title="Featured Products"
+              subtitle="Handpicked for you"
+              href="/products"
+            />
+            {loadingFeatured ? (
+              <ProductRowSkeleton count={6} />
+            ) : featured.length === 0 ? (
+              <p className="py-8 text-center text-sm text-swiggy-gray-400">No featured products yet</p>
+            ) : (
+              <HorizontalScroller>
+                {featured.slice(0, 12).map((product: any) => (
+                  <ProductCard key={product.id} product={product} compact />
+                ))}
+              </HorizontalScroller>
+            )}
+          </div>
+        </section>
+
+        <div className="container mx-auto px-4">
+          <hr className="border-gray-100" />
+        </div>
+
+        {/* Best Sellers */}
+        {bestSellers.length > 0 && (
+          <section className="py-4">
+            <div className="container mx-auto px-4">
+              <SectionHeader
+                title="Best Sellers"
+                subtitle="Most ordered around you"
+                href="/products?sortBy=popularity"
+              />
+              <HorizontalScroller>
+                {bestSellers.map((product: any) => (
+                  <ProductCard key={product.id} product={product} compact />
+                ))}
+              </HorizontalScroller>
+            </div>
+          </section>
+        )}
+
+        <div className="container mx-auto px-4">
+          <hr className="border-gray-100" />
+        </div>
+
+        {/* All Products Grid */}
+        <section className="py-4">
+          <div className="container mx-auto px-4">
+            <SectionHeader
+              title="All Products"
+              subtitle="Browse our complete selection"
+              href="/products"
+            />
+            {loadingAll ? (
+              <ProductRowSkeleton count={5} />
+            ) : (
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+                {allItems.slice(0, 18).map((product: any) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* Recently Added */}
+        {recentProducts.length > 0 && (
+          <>
+            <div className="container mx-auto px-4">
+              <hr className="border-gray-100" />
+            </div>
+            <section className="py-4">
+              <div className="container mx-auto px-4">
+                <SectionHeader title="Recently Added" href="/products?sortBy=createdAt" />
+                <HorizontalScroller>
+                  {recentProducts.map((product: any) => (
+                    <ProductCard key={`recent-${product.id}`} product={product} compact />
                   ))}
-                </div>
+                </HorizontalScroller>
               </div>
-            </div>
-          </div>
-        </div>
-      </section>
+            </section>
+          </>
+        )}
+      </main>
 
-      {/* Features */}
-      <section className="bg-white py-16">
-        <div className="container mx-auto px-4">
-          <div className="grid gap-8 md:grid-cols-3">
-            <div className="rounded-2xl bg-gradient-to-br from-green-50 to-green-100 p-8">
-              <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-primary text-white">
-                <Truck className="h-7 w-7" />
-              </div>
-              <h3 className="mb-2 text-xl font-semibold">Express Delivery</h3>
-              <p className="text-gray-600">
-                Get your order delivered in as fast as 10 minutes
-              </p>
-            </div>
-            <div className="rounded-2xl bg-gradient-to-br from-blue-50 to-blue-100 p-8">
-              <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-blue-500 text-white">
-                <ShoppingBag className="h-7 w-7" />
-              </div>
-              <h3 className="mb-2 text-xl font-semibold">Wide Selection</h3>
-              <p className="text-gray-600">
-                Browse thousands of products from local stores
-              </p>
-            </div>
-            <div className="rounded-2xl bg-gradient-to-br from-purple-50 to-purple-100 p-8">
-              <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-purple-500 text-white">
-                <Clock className="h-7 w-7" />
-              </div>
-              <h3 className="mb-2 text-xl font-semibold">Fresh Guaranteed</h3>
-              <p className="text-gray-600">
-                Quality checked products, always fresh
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Categories */}
-      <section className="py-16">
-        <div className="container mx-auto px-4">
-          <h2 className="mb-8 text-3xl font-bold text-gray-900">Shop by Category</h2>
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-8">
-            {categories.slice(0, 8).map((category: any) => (
-              <Link
-                key={category.id}
-                href={`/products?category=${category.slug}`}
-                className="group rounded-2xl bg-white p-4 text-center shadow-sm transition-all hover:shadow-md"
-              >
-                <div className="mb-3 aspect-square overflow-hidden rounded-xl bg-gray-100">
-                  {category.image ? (
-                    <Image
-                      src={category.image}
-                      alt={category.name}
-                      width={100}
-                      height={100}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-full items-center justify-center text-3xl">
-                      🛒
-                    </div>
-                  )}
-                </div>
-                <h3 className="text-sm font-medium text-gray-900 group-hover:text-primary">
-                  {category.name}
-                </h3>
-                <p className="text-xs text-gray-500">
-                  {category.productCount || 0} items
-                </p>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Featured Products */}
-      <section className="bg-white py-16">
-        <div className="container mx-auto px-4">
-          <div className="mb-8 flex items-center justify-between">
-            <h2 className="text-3xl font-bold text-gray-900">Featured Products</h2>
-            <Link href="/products">
-              <Button variant="ghost" className="gap-2">
-                View All <ArrowRight className="h-4 w-4" />
-              </Button>
-            </Link>
-          </div>
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-5">
-            {featuredProducts.slice(0, 10).map((product: any) => (
-              <Link
-                key={product.id}
-                href={`/products/${product.slug}`}
-                className="group rounded-2xl bg-white p-4 shadow-sm transition-all hover:shadow-md"
-              >
-                <div className="relative mb-3 aspect-square overflow-hidden rounded-xl bg-gray-100">
-                  {product.images?.[0]?.url ? (
-                    <Image
-                      src={product.images[0].url}
-                      alt={product.name}
-                      fill
-                      className="object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-full items-center justify-center text-4xl">
-                      📦
-                    </div>
-                  )}
-                  {product.discountedPrice && (
-                    <div className="absolute left-2 top-2 rounded-full bg-red-500 px-2 py-1 text-xs font-medium text-white">
-                      {Math.round((1 - product.discountedPrice / product.price) * 100)}% OFF
-                    </div>
-                  )}
-                </div>
-                <h3 className="mb-1 line-clamp-2 text-sm font-medium text-gray-900 group-hover:text-primary">
-                  {product.name}
-                </h3>
-                <p className="text-xs text-gray-500">{product.unit}</p>
-                <div className="mt-2 flex items-center gap-2">
-                  <span className="text-lg font-bold text-gray-900">
-                    ₹{product.discountedPrice || product.price}
-                  </span>
-                  {product.discountedPrice && (
-                    <span className="text-sm text-gray-400 line-through">
-                      ₹{product.price}
-                    </span>
-                  )}
-                </div>
-                <Button size="sm" className="mt-3 w-full">
-                  Add to Cart
-                </Button>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="border-t bg-gray-50 py-12">
-        <div className="container mx-auto px-4">
-          <div className="grid gap-8 md:grid-cols-4">
-            <div>
-              <div className="mb-4 flex items-center gap-2">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary">
-                  <ShoppingBag className="h-6 w-6 text-white" />
-                </div>
-                <span className="text-xl font-bold">QuickMart</span>
-              </div>
-              <p className="text-sm text-gray-600">
-                Your neighborhood quick-commerce store. Fresh groceries delivered in minutes!
-              </p>
-            </div>
-            <div>
-              <h4 className="mb-4 font-semibold">Quick Links</h4>
-              <ul className="space-y-2 text-sm text-gray-600">
-                <li><Link href="/products" className="hover:text-primary">Products</Link></li>
-                <li><Link href="/categories" className="hover:text-primary">Categories</Link></li>
-                <li><Link href="/orders" className="hover:text-primary">My Orders</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="mb-4 font-semibold">Support</h4>
-              <ul className="space-y-2 text-sm text-gray-600">
-                <li><Link href="/help" className="hover:text-primary">Help Center</Link></li>
-                <li><Link href="/contact" className="hover:text-primary">Contact Us</Link></li>
-                <li><Link href="/faq" className="hover:text-primary">FAQs</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="mb-4 font-semibold">Contact</h4>
-              <ul className="space-y-2 text-sm text-gray-600">
-                <li>support@quickmart.local</li>
-                <li>+91 98765 43210</li>
-                <li>Mumbai, India</li>
-              </ul>
-            </div>
-          </div>
-          <div className="mt-8 border-t pt-8 text-center text-sm text-gray-600">
-            © 2026 QuickMart. All rights reserved.
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

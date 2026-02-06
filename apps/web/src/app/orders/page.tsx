@@ -2,15 +2,17 @@
 
 export const dynamic = 'force-dynamic';
 
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Package, ChevronRight, Clock, CheckCircle, Truck, XCircle } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { Package, ChevronRight, Clock, CheckCircle, Truck, XCircle, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Navbar } from '@/components/layout/navbar';
 import { Footer } from '@/components/layout/footer';
-import { useAuthStore } from '@/lib/store';
-import { ordersApi } from '@/lib/api';
+import { useAuthStore, useCartStore } from '@/lib/store';
+import { ordersApi, cartApi } from '@/lib/api';
+import { toast } from '@/components/ui/use-toast';
 
 const statusConfig: Record<string, { icon: any; color: string; bg: string }> = {
   PENDING: { icon: Clock, color: 'text-yellow-600', bg: 'bg-yellow-100' },
@@ -25,28 +27,21 @@ const statusConfig: Record<string, { icon: any; color: string; bg: string }> = {
 export default function OrdersPage() {
   const router = useRouter();
   const { isAuthenticated, accessToken } = useAuthStore();
-  const [orders, setOrders] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { addItem } = useCartStore();
+
+  const { data: ordersData, isLoading, refetch } = useQuery({
+    queryKey: ['orders'],
+    queryFn: () => ordersApi.list(accessToken!),
+    enabled: !!isAuthenticated && !!accessToken,
+  });
+
+  const orders = (ordersData as any)?.items || [];
 
   useEffect(() => {
     if (!isAuthenticated) {
       router.push('/login?redirect=/orders');
-      return;
     }
-
-    const fetchOrders = async () => {
-      try {
-        const data = await ordersApi.list(accessToken!);
-        setOrders(data.items || []);
-      } catch (error) {
-        console.error('Failed to fetch orders:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchOrders();
-  }, [isAuthenticated, accessToken, router]);
+  }, [isAuthenticated, router]);
 
   if (!isAuthenticated) {
     return null;
@@ -57,7 +52,12 @@ export default function OrdersPage() {
       <Navbar />
 
       <main className="container mx-auto px-4 py-8">
-        <h1 className="mb-8 text-3xl font-bold text-gray-900">My Orders</h1>
+        <div className="mb-8 flex items-center justify-between">
+          <h1 className="text-3xl font-bold text-gray-900">My Orders</h1>
+          <Button variant="outline" onClick={() => refetch()} disabled={isLoading}>
+            Refresh
+          </Button>
+        </div>
 
         {isLoading ? (
           <div className="space-y-4">
@@ -126,6 +126,50 @@ export default function OrdersPage() {
                         hour: '2-digit',
                         minute: '2-digit',
                       })}
+                    </div>
+                  )}
+
+                  {/* Reorder Button */}
+                  {order.status === 'DELIVERED' && (
+                    <div className="mt-4">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={async (e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          try {
+                            if (!accessToken) return;
+                            for (const item of order.items || []) {
+                              await cartApi.addItem(accessToken, item.productId, item.quantity);
+                              addItem({
+                                productId: item.productId,
+                                quantity: item.quantity,
+                                product: {
+                                  id: item.product.id,
+                                  name: item.product.name,
+                                  slug: item.product.slug,
+                                  price: item.product.price,
+                                  discountedPrice: item.product.discountedPrice,
+                                  unit: item.product.unit || '',
+                                  stockQuantity: item.product.stockQuantity || 0,
+                                  isAvailable: item.product.isAvailable !== false,
+                                  images: item.product.images || [],
+                                },
+                                itemTotal: item.itemTotal,
+                              });
+                            }
+                            toast({ title: 'Items added to cart!' });
+                            router.push('/cart');
+                          } catch {
+                            toast({ title: 'Failed to reorder', variant: 'destructive' });
+                          }
+                        }}
+                        className="gap-2"
+                      >
+                        <RotateCcw className="h-4 w-4" />
+                        Reorder
+                      </Button>
                     </div>
                   )}
                 </Link>

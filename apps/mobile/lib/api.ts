@@ -54,7 +54,13 @@ export async function api<T>(
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${API_URL}${endpoint}`, {
+  const url = `${API_URL}${endpoint}`;
+
+  // Helpful for debugging whether calls are firing and where they go
+  // eslint-disable-next-line no-console
+  console.log('[api] Request', url, options.method || 'GET');
+
+  const response = await fetch(url, {
     ...fetchOptions,
     headers,
   });
