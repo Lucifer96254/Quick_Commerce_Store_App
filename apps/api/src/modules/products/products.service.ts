@@ -401,14 +401,16 @@ export class ProductsService {
     return { message: 'Product deleted successfully' };
   }
 
-  async getFeatured(limit: number = 10) {
+  async getFeatured(limit?: number) {
+    // Ensure limit is a valid positive number, default to 10
+    const takeLimit = Math.max(1, Math.min(100, Number(limit) || 10));
     const products = await this.db.product.findMany({
       where: {
         isFeatured: true,
         isAvailable: true,
         stockQuantity: { gt: 0 },
       },
-      take: limit,
+      take: takeLimit,
       orderBy: { createdAt: 'desc' },
       include: {
         category: {
