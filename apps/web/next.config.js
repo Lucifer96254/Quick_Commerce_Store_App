@@ -3,10 +3,6 @@ const nextConfig = {
   output: 'standalone',
   reactStrictMode: true,
   transpilePackages: ['@quickmart/shared-types'],
-  // Skip generating static error pages
-  generateBuildId: async () => {
-    return 'build-' + Date.now();
-  },
   images: {
     remotePatterns: [
       {
@@ -50,6 +46,10 @@ const nextConfig = {
         destination: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/:path*`,
       },
     ];
+  },
+  // Skip static generation for error pages
+  experimental: {
+    missingSuspenseWithCSRBailout: false,
   },
 };
 

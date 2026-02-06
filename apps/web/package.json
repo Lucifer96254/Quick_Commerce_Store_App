@@ -4,7 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3000",
-    "build": "next build",
+    "build": "./build.sh",
+    "build:simple": "next build",
+    "build:strict": "next build",
     "start": "next start -p 3000",
     "lint": "next lint",
     "clean": "rm -rf .next node_modules"
