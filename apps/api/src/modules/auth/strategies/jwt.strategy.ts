@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, Logger } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
@@ -13,6 +13,8 @@ interface JwtPayload {
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
+  private readonly logger = new Logger(JwtStrategy.name);
+
   constructor(
     private readonly configService: ConfigService,
     private readonly authService: AuthService,
@@ -25,12 +27,26 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   }
 
   async validate(payload: JwtPayload) {
-    const user = await this.authService.validateUser(payload.sub);
+    try {
+      const user = await this.authService.validateUser(payload.sub);
 
-    if (!user || !user.isActive) {
-      throw new UnauthorizedException('User not found or inactive');
+      if (!user) {
+        this.logger.warn(`User not found: ${payload.sub}`);
+        throw new UnauthorizedException('User not found');
+      }
+
+      if (!user.isActive) {
+        this.logger.warn(`Inactive user attempted access: ${payload.sub}`);
+        throw new UnauthorizedException('User account is inactive');
+      }
+
+      return user;
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      this.logger.error(`Error validating user ${payload.sub}:`, error);
+      throw new UnauthorizedException('Authentication failed');
     }
-
-    return user;
   }
 }

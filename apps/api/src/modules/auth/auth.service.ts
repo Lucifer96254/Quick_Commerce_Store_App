@@ -3,6 +3,7 @@ import {
   UnauthorizedException,
   ConflictException,
   BadRequestException,
+  NotFoundException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -368,6 +369,15 @@ export class AuthService {
   }
 
   async validateUser(userId: string) {
-    return this.usersService.findById(userId);
+    try {
+      return await this.usersService.findById(userId);
+    } catch (error) {
+      // Return null if user not found instead of throwing
+      // This allows JWT strategy to handle it gracefully
+      if (error instanceof NotFoundException) {
+        return null;
+      }
+      throw error;
+    }
   }
 }
