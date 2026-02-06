@@ -12,10 +12,7 @@
       "android": {
         "buildType": "apk"
       },
-      "node": "20.x.x",
-      "npm": {
-        "installArgs": ["--legacy-peer-deps"]
-      }
+      "node": "20"
     },
     "preview": {
       "distribution": "internal",
@@ -28,10 +25,7 @@
       "env": {
         "EXPO_PUBLIC_API_URL": "https://quickmart-api-v065.onrender.com"
       },
-      "node": "20.x.x",
-      "npm": {
-        "installArgs": ["--legacy-peer-deps"]
-      }
+      "node": "20"
     },
     "production": {
       "distribution": "store",
@@ -39,15 +33,12 @@
         "simulator": false
       },
       "android": {
-        "buildType": "aab"
+        "buildType": "app-bundle"
       },
       "env": {
         "EXPO_PUBLIC_API_URL": "https://quickmart-api-v065.onrender.com"
       },
-      "node": "20.x.x",
-      "npm": {
-        "installArgs": ["--legacy-peer-deps"]
-      }
+      "node": "20"
     }
   },
   "submit": {
