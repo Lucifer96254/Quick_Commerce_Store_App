@@ -12,6 +12,7 @@ import { router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { cartApi, ordersApi, addressesApi } from '@/lib/api';
+import { sendOrderNotification } from '@/lib/notifications';
 
 export default function CheckoutScreen() {
   const queryClient = useQueryClient();
@@ -51,9 +52,11 @@ export default function CheckoutScreen() {
       const addressId = selectedAddressId || addrList[0].id;
       return ordersApi.create({ addressId, paymentMethod });
     },
-    onSuccess: (order: any) => {
+    onSuccess: async (order: any) => {
       queryClient.invalidateQueries({ queryKey: ['cart'] });
       queryClient.invalidateQueries({ queryKey: ['orders'] });
+      // Send push notification
+      await sendOrderNotification(order.orderNumber || order.id);
       Alert.alert('Order Placed! 🎉', 'Your order has been placed successfully.', [
         {
           text: 'View Order',

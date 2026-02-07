@@ -403,7 +403,10 @@ export class ProductsService {
 
   async getFeatured(limit?: number) {
     // Ensure limit is a valid positive number, default to 10
-    const takeLimit = Math.max(1, Math.min(100, Number(limit) || 10));
+    // Handle undefined, null, NaN, 0, or negative numbers
+    const numLimit = limit !== undefined && limit !== null ? Number(limit) : NaN;
+    const takeLimit =
+      !isNaN(numLimit) && numLimit > 0 ? Math.max(1, Math.min(100, numLimit)) : 10;
     const products = await this.db.product.findMany({
       where: {
         isFeatured: true,

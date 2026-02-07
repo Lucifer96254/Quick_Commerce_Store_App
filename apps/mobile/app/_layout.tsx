@@ -3,6 +3,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as SplashScreen from 'expo-splash-screen';
+import { registerForPushNotificationsAsync } from '@/lib/notifications';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -18,6 +19,10 @@ const queryClient = new QueryClient({
 export default function RootLayout() {
   useEffect(() => {
     SplashScreen.hideAsync();
+    // Register for push notifications on app start
+    registerForPushNotificationsAsync().catch((err) => {
+      console.log('Error registering for notifications:', err);
+    });
   }, []);
 
   return (

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,11 +8,12 @@ import {
   ScrollView,
   Image,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { router } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Feather } from '@expo/vector-icons';
-import { categoriesApi, productsApi, cartApi } from '@/lib/api';
+import { categoriesApi, productsApi, cartApi, authApi } from '@/lib/api';
 
 const categoryEmojis: Record<string, string> = {
   fruits: '🍎',
@@ -38,6 +39,30 @@ export default function CategoriesScreen() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
+  // Check if user is logged in
+  const { data: user } = useQuery({
+    queryKey: ['user'],
+    queryFn: () => authApi.me(),
+    retry: false,
+  });
+
+  // Prompt login on mount if not authenticated
+  useEffect(() => {
+    if (user === null || user === undefined) {
+      Alert.alert(
+        'Login Required',
+        'Please login to browse products and add items to cart.',
+        [
+          { text: 'Maybe Later', style: 'cancel' },
+          {
+            text: 'Login',
+            onPress: () => router.push('/login'),
+          },
+        ],
+      );
+    }
+  }, [user]);
+
   const { data: categories, isLoading: loadingCategories } = useQuery({
     queryKey: ['categories'],
     queryFn: () => categoriesApi.list(),
@@ -56,6 +81,19 @@ export default function CategoriesScreen() {
     mutationFn: ({ productId }: { productId: string }) => cartApi.addItem(productId, 1),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['cart'] });
+    },
+    onError: () => {
+      Alert.alert(
+        'Login Required',
+        'Please login to add items to cart.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Login',
+            onPress: () => router.push('/login'),
+          },
+        ],
+      );
     },
   });
 
@@ -186,7 +224,7 @@ const styles = StyleSheet.create({
   },
   // Sidebar
   sidebar: {
-    width: 90,
+    width: 70,
     backgroundColor: '#fff',
     borderRightWidth: 1,
     borderRightColor: '#f3f4f6',
@@ -196,8 +234,8 @@ const styles = StyleSheet.create({
   },
   categoryItem: {
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 6,
+    paddingVertical: 10,
+    paddingHorizontal: 4,
     position: 'relative',
   },
   categoryItemActive: {
@@ -213,15 +251,15 @@ const styles = StyleSheet.create({
     backgroundColor: '#FC8019',
   },
   categoryEmoji: {
-    fontSize: 24,
-    marginBottom: 4,
+    fontSize: 20,
+    marginBottom: 3,
   },
   categoryName: {
-    fontSize: 10,
+    fontSize: 9,
     color: '#6b7280',
     textAlign: 'center',
     fontWeight: '500',
-    lineHeight: 13,
+    lineHeight: 12,
   },
   categoryNameActive: {
     color: '#FC8019',

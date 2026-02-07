@@ -59,8 +59,13 @@ export class ProductsController {
   @Get('featured')
   @Public()
   @ApiOperation({ summary: 'Get featured products' })
-  async getFeatured(@Query('limit') limit?: number) {
-    return this.productsService.getFeatured(limit);
+  async getFeatured(@Query('limit') limit?: string | number) {
+    // Parse limit to number, default to undefined if invalid
+    const parsedLimit =
+      limit !== undefined && limit !== null && !isNaN(Number(limit))
+        ? Number(limit)
+        : undefined;
+    return this.productsService.getFeatured(parsedLimit);
   }
 
   @Get('low-stock')
